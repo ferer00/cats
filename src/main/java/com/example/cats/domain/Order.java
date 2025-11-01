@@ -1,0 +1,13 @@
+package com.example.cats.domain;
+
+import lombok.Data;
+import java.time.Instant;
+import java.util.List;
+
+@Data
+public class Order {
+    private Long id;
+    private List<Product> items;
+    private Instant createdAt;
+    private String customerEmail;
+}

@@ -14,4 +14,5 @@ public class FeatureToggleProperties {
 
 
     private Map<String, Boolean> toggles = new HashMap<>();
+
 }

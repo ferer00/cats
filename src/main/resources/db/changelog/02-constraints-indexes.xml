@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Унікальність product_name в межах category -->
+    <changeSet id="7-unique-product-name-per-category" author="student">
+        <addUniqueConstraint
+                tableName="products"
+                columnNames="name, category"
+                constraintName="uk_products_name_category"/>
+    </changeSet>
+
+    <!-- Унікальний email користувача -->
+    <changeSet id="8-unique-user-email" author="student">
+        <addUniqueConstraint
+                tableName="users"
+                columnNames="email"
+                constraintName="uk_users_email"/>
+    </changeSet>
+
+</databaseChangeLog>

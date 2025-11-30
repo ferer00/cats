@@ -1,87 +1,129 @@
 package com.example.cats.controller;
 
+import com.example.cats.AbstractIt;
 import com.example.cats.domain.Category;
 import com.example.cats.dto.ProductDTO;
-import com.example.cats.service.ProductService;
+import com.example.cats.repository.ProductRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ProductController.class)
-class ProductControllerTestIT {
+@AutoConfigureMockMvc
+@DisplayName("Product Controller Integration Tests (REAL DB, TestContainers)")
+public class ProductControllerTestIT extends AbstractIt {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
-    private ProductService service;
+    private ObjectMapper mapper;
 
-    @TestConfiguration
-    static class MockConfig {
-        @Bean
-        public ProductService productService() {
-            return Mockito.mock(ProductService.class);
-        }
+    @Autowired
+    private ProductRepository productRepository;
+
+    private ProductDTO baseDto;
+
+    @BeforeEach
+    void init() {
+
+        productRepository.deleteAll();
+
+        baseDto = new ProductDTO();
+        baseDto.setName("Comet Food");
+        baseDto.setCategory(Category.FOOD);
+        baseDto.setPrice(10.5);
+        baseDto.setQuantity(7);
     }
 
     @Test
-    void create_ShouldReturnCreated() throws Exception {
-        ProductDTO dto = new ProductDTO();
-        dto.setId(1L);
-        dto.setName("Star Food");
-        dto.setCategory(Category.FOOD);
-        dto.setPrice(10.0);
-        dto.setQuantity(2);
-
-        Mockito.when(service.create(any())).thenReturn(dto);
-
-        mockMvc.perform(post("/api/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                            {
-                                "name":"Star Food",
-                                "category":"FOOD",
-                                "price":10.0,
-                                "quantity":2
-                            }
-                        """))
+    void createProduct_ShouldReturnCreated() throws Exception {
+        mockMvc.perform(
+                        post("/api/products")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(baseDto))
+                )
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Star Food"));
+                .andExpect(jsonPath("$.name").value("Comet Food"))
+                .andExpect(jsonPath("$.category").value("FOOD"))
+                .andExpect(jsonPath("$.price").value(10.5))
+                .andExpect(jsonPath("$.quantity").value(7));
     }
 
     @Test
-    void getOne_ShouldReturnProduct_WhenExists() throws Exception {
-        ProductDTO dto = new ProductDTO();
-        dto.setId(1L);
-        dto.setName("Galaxy Toy");
-        dto.setCategory(Category.TOY);
-        dto.setPrice(5.0);
-        dto.setQuantity(3);
+    void getAllProducts_ShouldReturnList() throws Exception {
+        mockMvc.perform(
+                post("/api/products")
+                        .contentType("application/json")
+                        .content(mapper.writeValueAsString(baseDto))
+        ).andExpect(status().isCreated());
 
-        Mockito.when(service.findById(1L)).thenReturn(Optional.of(dto));
-
-        mockMvc.perform(get("/api/products/1"))
+        mockMvc.perform(get("/api/products"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Galaxy Toy"));
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Comet Food"));
     }
 
     @Test
-    void getOne_ShouldReturnNotFound_WhenMissing() throws Exception {
-        Mockito.when(service.findById(99L)).thenReturn(Optional.empty());
+    void getProductById_ShouldReturnProduct() throws Exception {
+        String response = mockMvc.perform(
+                        post("/api/products")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(baseDto))
+                )
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
-        mockMvc.perform(get("/api/products/99"))
+        ProductDTO saved = mapper.readValue(response, ProductDTO.class);
+
+        mockMvc.perform(get("/api/products/" + saved.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Comet Food"));
+    }
+
+    @Test
+    void deleteProduct_ShouldReturnNoContent() throws Exception {
+        String response = mockMvc.perform(
+                        post("/api/products")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(baseDto))
+                )
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        ProductDTO saved = mapper.readValue(response, ProductDTO.class);
+
+        mockMvc.perform(delete("/api/products/" + saved.getId()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/products/" + saved.getId()))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createProduct_InvalidData_ShouldReturnBadRequest() throws Exception {
+        ProductDTO invalid = new ProductDTO();
+        invalid.setName("A");
+        invalid.setCategory(null);
+        invalid.setPrice(-1.0);
+        invalid.setQuantity(-10);
+
+        mockMvc.perform(
+                        post("/api/products")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(invalid))
+                )
+                .andExpect(status().isBadRequest());
     }
 }

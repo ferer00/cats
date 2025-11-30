@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: cosmo-postgres
+    environment:
+      POSTGRES_DB: cosmo_cats
+      POSTGRES_USER: cosmo
+      POSTGRES_PASSWORD: cats
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cosmo-net
+
+  cosmo-cats-app:
+    build: .
+    container_name: cosmo-cats-app
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cosmo_cats
+      SPRING_DATASOURCE_USERNAME: cosmo
+      SPRING_DATASOURCE_PASSWORD: cats
+    ports:
+      - "8080:8080"
+    networks:
+      - cosmo-net
+
+networks:
+  cosmo-net:
+
+volumes:
+  postgres_data:

@@ -5,6 +5,7 @@ import com.example.cats.dto.ProductDTO;
 import com.example.cats.mapper.ProductMapper;
 import com.example.cats.repository.ProductRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ProductDTO create(ProductDTO dto) {
         Product product = mapper.toDomain(dto);
         product.setId(null);
@@ -32,6 +34,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("isAuthenticated()")
     public List<ProductDTO> findAll() {
         return repository.findAll().stream()
                 .map(mapper::toDto)
@@ -39,11 +42,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("isAuthenticated()")
     public Optional<ProductDTO> findById(Long id) {
         return repository.findById(id).map(mapper::toDto);
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ProductDTO update(Long id, ProductDTO dto) {
         Product existing = repository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Product with id " + id + " not found"));
@@ -59,6 +64,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(Long id) {
         repository.deleteById(id);
     }

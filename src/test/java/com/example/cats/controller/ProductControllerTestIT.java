@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -44,6 +45,7 @@ public class ProductControllerTestIT extends AbstractIt {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void createProduct_ShouldReturnCreated() throws Exception {
         mockMvc.perform(
                         post("/api/products")
@@ -58,6 +60,7 @@ public class ProductControllerTestIT extends AbstractIt {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getAllProducts_ShouldReturnList() throws Exception {
         mockMvc.perform(
                 post("/api/products")
@@ -72,6 +75,7 @@ public class ProductControllerTestIT extends AbstractIt {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getProductById_ShouldReturnProduct() throws Exception {
         String response = mockMvc.perform(
                         post("/api/products")
@@ -91,6 +95,7 @@ public class ProductControllerTestIT extends AbstractIt {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteProduct_ShouldReturnNoContent() throws Exception {
         String response = mockMvc.perform(
                         post("/api/products")
@@ -112,6 +117,7 @@ public class ProductControllerTestIT extends AbstractIt {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void createProduct_InvalidData_ShouldReturnBadRequest() throws Exception {
         ProductDTO invalid = new ProductDTO();
         invalid.setName("A");
